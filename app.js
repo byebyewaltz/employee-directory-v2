@@ -1,34 +1,26 @@
 import express from "express";
+import employeesRouter from "#routes/employees";
+
 const app = express();
-export default app;
 
-import employees from "#db/employees";
+// ── Middleware ────────────────────────────────────────────────────────────────
+app.use(express.json()); // parse JSON request bodies
 
+// ── Routes ────────────────────────────────────────────────────────────────────
 app.get("/", (req, res) => {
   res.send("Hello employees!");
 });
 
-app.get("/employees", (req, res) => {
-  res.send(employees);
+// All /employees routes are handled by the dedicated router
+app.use("/employees", employeesRouter);
+
+// ── Error-handling middleware ─────────────────────────────────────────────────
+// Four-argument signature tells Express this is an error handler.
+// Catches any uncaught errors thrown in route handlers and sends status 500.
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).send("Internal Server Error");
 });
 
-// Note: this middleware has to come first! Otherwise, Express will treat
-// "random" as the argument to the `id` parameter of /employees/:id.
-app.get("/employees/random", (req, res) => {
-  const randomIndex = Math.floor(Math.random() * employees.length);
-  res.send(employees[randomIndex]);
-});
-
-app.get("/employees/:id", (req, res) => {
-  const { id } = req.params;
-
-  // req.params are always strings, so we need to convert `id` into a number
-  // before we can use it to find the employee
-  const employee = employees.find((e) => e.id === +id);
-
-  if (!employee) {
-    return res.status(404).send("Employee not found");
-  }
-
-  res.send(employee);
-});
+export default app;
